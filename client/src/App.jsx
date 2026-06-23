@@ -21,6 +21,16 @@ function fireConfetti() {
   })();
 }
 
+// Remember who you are across page refreshes / brief disconnects.
+const SESSION_KEY = 'ig_session_v1';
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+}
+function saveSession(s) {
+  if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+  else localStorage.removeItem(SESSION_KEY);
+}
+
 export default function App() {
   const [config, setConfig] = useState(null);
   const [screen, setScreen] = useState('login');
@@ -29,6 +39,7 @@ export default function App() {
   const [answerKey, setAnswerKey] = useState(null);
   const [facData, setFacData] = useState(null);
   const prevPhase = useRef('lobby');
+  const sessionRef = useRef(loadSession());
 
   useEffect(() => {
     socket.on('config', setConfig);
@@ -39,6 +50,21 @@ export default function App() {
     return () => socket.off();
   }, []);
 
+  // Auto-rejoin on first load AND on every (re)connect — survives refreshes and
+  // network drops. The server keeps each team's board in memory, so rejoining
+  // restores placements, scenario answers and scores.
+  useEffect(() => {
+    function rejoin() {
+      const s = sessionRef.current;
+      if (!s) return;
+      if (s.role === 'facilitator') { socket.emit('joinFacilitator'); setScreen('facilitator'); }
+      else if (s.username && s.teamId) { socket.emit('joinTeam', { username: s.username, teamId: s.teamId }); setScreen('play'); }
+    }
+    socket.on('connect', rejoin);
+    if (socket.connected) rejoin();
+    return () => socket.off('connect', rejoin);
+  }, []);
+
   // Celebrate when answers are revealed.
   useEffect(() => {
     if (prevPhase.current !== 'revealed' && phase === 'revealed') fireConfetti();
@@ -47,12 +73,22 @@ export default function App() {
   }, [phase]);
 
   function joinTeam(username, teamId) {
+    sessionRef.current = { role: 'player', username, teamId };
+    saveSession(sessionRef.current);
     socket.emit('joinTeam', { username, teamId });
     setScreen('play');
   }
   function joinFacilitator() {
+    sessionRef.current = { role: 'facilitator' };
+    saveSession(sessionRef.current);
     socket.emit('joinFacilitator');
     setScreen('facilitator');
+  }
+  function leave() {
+    sessionRef.current = null;
+    saveSession(null);
+    setTeam(null);
+    setScreen('login');
   }
 
   const move = (cardId, zone) => socket.emit('move', { cardId, zone });
@@ -92,6 +128,7 @@ export default function App() {
           <span className={`pill ${phase === 'playing' ? 'live' : ''}`}>
             {phase === 'lobby' ? 'Waiting to start' : phase === 'playing' ? 'Live' : 'Revealed'}
           </span>
+          <button className="btn ghost" style={{ padding: '8px 14px', fontSize: 13 }} onClick={leave}>Leave</button>
         </div>
       )}
 

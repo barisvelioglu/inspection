@@ -11,7 +11,7 @@ export default function Facilitator({ data, onControl }) {
       <h2 style={{ fontSize: 26, margin: '6px 0' }}>Facilitator big screen</h2>
       <div className="fac-controls">
         <button className="btn good" disabled={phase !== 'lobby'} onClick={() => onControl('start')}>▶ Start challenge</button>
-        <button className="btn" disabled={phase !== 'playing'} onClick={() => onControl('reveal')}>🎉 Reveal answers</button>
+        <button className="btn" disabled={phase === 'revealed'} onClick={() => onControl('reveal')}>🎉 Reveal answers</button>
         <button className="btn ghost" onClick={() => onControl('reset')}>↺ Reset round</button>
         <span className="spacer" />
         <span className={`pill ${phase === 'playing' ? 'live' : ''}`}>
