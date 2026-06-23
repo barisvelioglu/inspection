@@ -1,0 +1,16 @@
+# Inspection Readiness — live team challenge
+# One service: a Node.js + Socket.IO real-time hub that also serves the React build.
+# Socket.IO is the collaboration "broker" here — every team gets its own room and
+# state syncs instantly to all teammates + the facilitator screen.
+#
+#   docker compose up --build      then open http://localhost:8080
+
+services:
+  app:
+    build: .
+    container_name: inspection-game
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    restart: unless-stopped

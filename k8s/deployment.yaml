@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inspection-game
+  namespace: inspection-game
+  labels:
+    app.kubernetes.io/name: inspection-game
+spec:
+  # IMPORTANT: in-memory game state (Socket.IO rooms) -> exactly ONE replica.
+  # Scaling >1 would split teams' boards across pods.
+  replicas: 1
+  # Recreate (not RollingUpdate): never run two pods at once; a redeploy
+  # intentionally resets the live game. Deploy BEFORE a session, not during.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inspection-game
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inspection-game
+    spec:
+      # The image is imported into containerd on a node (not pulled from a
+      # registry). If your cluster has MORE THAN ONE node, either import the
+      # image on every node, OR pin the pod to the node you imported it on by
+      # uncommenting nodeSelector below and labelling that node:
+      #   kubectl label node <node-name> inspection-game/host=true
+      # nodeSelector:
+      #   inspection-game/host: "true"
+      containers:
+        - name: app
+          image: inspection-game:latest
+          imagePullPolicy: Never        # use the locally-imported image
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 256Mi

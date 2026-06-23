@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: inspection-game
+  namespace: inspection-game
+  labels:
+    app.kubernetes.io/name: inspection-game
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: inspection-game
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

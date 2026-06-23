@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inspection-game
+  namespace: inspection-game
+  labels:
+    app.kubernetes.io/name: inspection-game
+  annotations:
+    # cert-manager issues + renews the cert. Change this to the exact name of
+    # YOUR ClusterIssuer (check: kubectl get clusterissuer).
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Force HTTPS. Uses the redirect middleware defined below (Traefik CRD).
+    # Comment this out if you don't apply the Middleware.
+    traefik.ingress.kubernetes.io/router.middlewares: inspection-game-https-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - budane.net
+      secretName: budane-net-tls
+  rules:
+    - host: budane.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inspection-game
+                port:
+                  number: 80
+# Traefik passes WebSocket (Socket.IO) traffic through natively — no extra
+# annotation needed. With a single replica, no sticky-session config is required.
+---
+# Optional: redirect http://budane.net -> https. Remove if you don't want it
+# (and drop the router.middlewares annotation above).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: inspection-game
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
