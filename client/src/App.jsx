@@ -38,6 +38,7 @@ export default function App() {
   const [phase, setPhase] = useState('lobby');
   const [answerKey, setAnswerKey] = useState(null);
   const [facData, setFacData] = useState(null);
+  const [authError, setAuthError] = useState(null);
   const prevPhase = useRef('lobby');
   const sessionRef = useRef(loadSession());
 
@@ -47,6 +48,12 @@ export default function App() {
     socket.on('phase', ({ phase }) => setPhase(phase));
     socket.on('answerKey', setAnswerKey);
     socket.on('facilitator', setFacData);
+    socket.on('facilitatorDenied', () => {
+      sessionRef.current = null;
+      saveSession(null);
+      setScreen('login');
+      setAuthError('Wrong facilitator password.');
+    });
     return () => socket.off();
   }, []);
 
@@ -57,7 +64,7 @@ export default function App() {
     function rejoin() {
       const s = sessionRef.current;
       if (!s) return;
-      if (s.role === 'facilitator') { socket.emit('joinFacilitator'); setScreen('facilitator'); }
+      if (s.role === 'facilitator') { socket.emit('joinFacilitator', { password: s.password }); setScreen('facilitator'); }
       else if (s.username && s.teamId) { socket.emit('joinTeam', { username: s.username, teamId: s.teamId }); setScreen('play'); }
     }
     socket.on('connect', rejoin);
@@ -78,10 +85,11 @@ export default function App() {
     socket.emit('joinTeam', { username, teamId });
     setScreen('play');
   }
-  function joinFacilitator() {
-    sessionRef.current = { role: 'facilitator' };
+  function joinFacilitator(password) {
+    setAuthError(null);
+    sessionRef.current = { role: 'facilitator', password };
     saveSession(sessionRef.current);
-    socket.emit('joinFacilitator');
+    socket.emit('joinFacilitator', { password });
     setScreen('facilitator');
   }
   function leave() {
@@ -133,7 +141,7 @@ export default function App() {
       )}
 
       {screen === 'login' && config && (
-        <Login teams={config.teams} onJoinTeam={joinTeam} onJoinFacilitator={joinFacilitator} />
+        <Login teams={config.teams} onJoinTeam={joinTeam} onJoinFacilitator={joinFacilitator} authError={authError} />
       )}
       {screen === 'login' && !config && <div className="login-wrap"><div className="empty">Connecting…</div></div>}
 

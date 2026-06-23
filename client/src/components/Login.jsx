@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 
-export default function Login({ teams, onJoinTeam, onJoinFacilitator }) {
+export default function Login({ teams, onJoinTeam, onJoinFacilitator, authError }) {
   const [role, setRole] = useState('player');
   const [username, setUsername] = useState('');
   const [teamId, setTeamId] = useState(teams[0]?.id);
+  const [password, setPassword] = useState('');
 
-  const canJoin = role === 'facilitator' || (username.trim() && teamId);
+  const canJoin = role === 'facilitator'
+    ? password.trim().length > 0
+    : (username.trim() && teamId);
 
   function submit() {
-    if (role === 'facilitator') return onJoinFacilitator();
-    if (username.trim() && teamId) onJoinTeam(username.trim(), teamId);
+    if (!canJoin) return;
+    if (role === 'facilitator') return onJoinFacilitator(password.trim());
+    onJoinTeam(username.trim(), teamId);
   }
 
   return (
@@ -47,6 +51,19 @@ export default function Login({ teams, onJoinTeam, onJoinFacilitator }) {
               </div>
             </div>
           </>
+        )}
+
+        {role === 'facilitator' && (
+          <div className="field">
+            <label>Facilitator password</label>
+            <input className="input" type="password" value={password} placeholder="Enter password"
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && submit()} autoFocus />
+          </div>
+        )}
+
+        {authError && (
+          <div style={{ color: '#fda4af', fontSize: 13, fontWeight: 600, marginBottom: 14 }}>⚠ {authError}</div>
         )}
 
         <button className="btn" style={{ width: '100%', marginTop: 6 }} disabled={!canJoin} onClick={submit}>

@@ -62,11 +62,13 @@ export const SCENARIOS = [
   },
 ];
 
+// Teams are branded as products for the workshop.
 export const TEAMS = [
-  { id: 't1', name: 'Aurora', color: '#6366f1' },
-  { id: 't2', name: 'Nimbus', color: '#06b6d4' },
-  { id: 't3', name: 'Solstice', color: '#f97316' },
-  { id: 't4', name: 'Vertex', color: '#ec4899' },
-  { id: 't5', name: 'Quasar', color: '#14b8a6' },
-  { id: 't6', name: 'Zephyr', color: '#a855f7' },
+  { id: 't1', name: 'Padcev', color: '#6366f1' },
+  { id: 't2', name: 'Evrenzo', color: '#06b6d4' },
+  { id: 't3', name: 'Advagraf', color: '#f97316' },
+  { id: 't4', name: 'Veoza', color: '#ec4899' },
+  { id: 't5', name: 'Prograf', color: '#14b8a6' },
+  { id: 't6', name: 'Xospata', color: '#eab308' },
+  { id: 't7', name: 'Xtandi', color: '#a855f7' },
 ];

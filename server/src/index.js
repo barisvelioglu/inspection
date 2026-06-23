@@ -8,6 +8,7 @@ import { CARDS, ZONES, SCENARIOS, TEAMS } from './cards.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 8080;
+const FACILITATOR_PASSWORD = process.env.FACILITATOR_PASSWORD || '6139';
 
 const app = express();
 app.use(cors());
@@ -126,7 +127,11 @@ io.on('connection', (socket) => {
     broadcastTeam(teamId);
   });
 
-  socket.on('joinFacilitator', () => {
+  socket.on('joinFacilitator', ({ password } = {}) => {
+    if (password !== FACILITATOR_PASSWORD) {
+      socket.emit('facilitatorDenied');
+      return;
+    }
     socket.data.facilitator = true;
     socket.join('facilitator');
     broadcastFacilitator();
