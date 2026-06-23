@@ -21,13 +21,12 @@ spec:
       labels:
         app.kubernetes.io/name: inspection-game
     spec:
-      # The image is imported into containerd on a node (not pulled from a
-      # registry). If your cluster has MORE THAN ONE node, either import the
-      # image on every node, OR pin the pod to the node you imported it on by
-      # uncommenting nodeSelector below and labelling that node:
-      #   kubectl label node <node-name> inspection-game/host=true
-      # nodeSelector:
-      #   inspection-game/host: "true"
+      # The image is built+imported into containerd on ONE node (pi-server) and
+      # is not pulled from a registry. On this 5-node cluster the pod must run
+      # where the image lives, so we pin it to pi-server via the built-in
+      # hostname label. Build there with k8s/install-builder-and-build.sh.
+      nodeSelector:
+        kubernetes.io/hostname: pi-server
       containers:
         - name: app
           image: inspection-game:latest

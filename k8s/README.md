@@ -13,26 +13,44 @@ kubectl get clusterissuer          # confirm your cert-manager issuer name
 kubectl -n kube-system get pods | grep traefik   # confirm Traefik is running
 ```
 
-- **DNS:** an `A` record for `budane.net` → your cluster's public IP, with ports
-  **80 and 443 reachable from the internet** (cert-manager's HTTP-01 challenge
-  and Let's Encrypt need port 80).
+- **DNS:** `budane.net` resolves to the cluster's public IP, and ports **443**
+  (app) **+ 80** (http→https redirect) are reachable from the internet.
 - **cert-manager** installed with a working `ClusterIssuer`. If yours isn't named
   `letsencrypt-prod`, edit `cert-manager.io/cluster-issuer` in `ingress.yaml`.
+- **This cluster's `letsencrypt-prod` uses Cloudflare DNS-01** (not HTTP-01),
+  scoped by a `dnsZones` selector. So for a new domain you must, one time:
+  1. **Add the domain to the issuer's solver selector:**
+     ```bash
+     kubectl patch clusterissuer letsencrypt-prod --type=json \
+       -p='[{"op":"add","path":"/spec/acme/solvers/0/selector/dnsZones/-","value":"budane.net"}]'
+     ```
+  2. **Add the domain to the Cloudflare API token** behind the
+     `cloudflare-api-token` secret (Cloudflare dashboard → API Tokens → edit →
+     Zone Resources → add the zone, with `Zone:Read` + `DNS:Edit`). Editing keeps
+     the token value, so no secret change is needed.
+  Without **both**, the ACME order fails with *"no configured challenge solvers"*
+  or *"Found no Zones for domain"* and the cert never issues.
 
 ## 1. Build + import the image
 
-Run on a cluster node (the image is loaded into k3s containerd, not a registry):
+The image is loaded into k3s containerd on **one node** (not a registry), and the
+Deployment is pinned to that node (`nodeSelector: kubernetes.io/hostname: pi-server`).
+
+If the node has **no image builder**, run this (installs nerdctl+buildkit, then
+builds straight into k3s containerd). Must run as root on the pinned node:
+
+```bash
+sudo bash k8s/install-builder-and-build.sh
+```
+
+If a builder is already present (docker or nerdctl), the lighter script works too:
 
 ```bash
 ./k8s/build-and-import.sh
 ```
 
-Multi-node cluster? Run it on every node, **or** pin the pod to one node:
-uncomment `nodeSelector` in `deployment.yaml` and label that node:
-
-```bash
-kubectl label node <node-name> inspection-game/host=true
-```
+Pinning to a different node? Change `kubernetes.io/hostname` in `deployment.yaml`
+to that node's name and build there.
 
 ## 2. Apply the manifests
 
