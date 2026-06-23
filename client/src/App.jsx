@@ -164,6 +164,8 @@ export default function App() {
       )}
 
       {screen === 'facilitator' && <Facilitator data={facData} onControl={control} />}
+
+      <div className="credit">Built by Gonca Pınarbaşı Velioğlu</div>
     </div>
   );
 }

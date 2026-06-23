@@ -216,6 +216,14 @@ h1, h2, h3, .brand { font-family: 'Sora', sans-serif; }
 .result-banner .big { font-size: 40px; display: block; margin-top: 4px;
   background: linear-gradient(90deg, #22c55e, #8b5cf6); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
+.credit {
+  position: fixed; bottom: 10px; right: 16px; z-index: 5;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+  color: var(--muted); opacity: 0.7; pointer-events: none;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+.credit::before { content: '✦ '; opacity: 0.7; }
+
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
